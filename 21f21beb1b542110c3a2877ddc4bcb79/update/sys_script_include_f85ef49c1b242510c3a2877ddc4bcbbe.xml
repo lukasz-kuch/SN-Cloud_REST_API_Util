@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_417839_cloud_res.AWSSigningRequest</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>AWSSigningRequest</name>
+        <script><![CDATA[const AWSSigningRequest = Class.create();
+AWSSigningRequest.prototype = {
+  initialize: function (params, payload) {
+    this.parameters = JSON.parse(params);
+    this.Payload = payload || '';
+    this.UriPath = '/';
+    this.Endpoint = this.parameters.endpoint.toString();
+    this.CanonicalQueryString = this.Endpoint.substring(
+      this.Endpoint.indexOf('?') + 1
+    );
+    this.Date = this.parameters.date.toString();
+    this.AccessID = this.parameters.accessId.toString();
+    this.Host = this.parameters.baseUrl.substring(8).toString();
+    this.Service = 'ec2';
+    this.Region = this.parameters.region.toString();
+    this.SecretKey = this.parameters.secretKey.toString();
+    this.Scope = `${this.Date.substring(0, 8)}/${this.Region}/${this.Service}/`
+      + 'aws4_request';
+    this.SignedHeaders = 'host;x-amz-date';
+    this.CryptoJS = new CryptoJS().CryptoJS;
+  },
+
+  createCanonicalRequest: function () {
+    const hashedPayload = this.CryptoJS.SHA256(this.Payload).toString(
+      this.CryptoJS.enc.Hex
+    );
+    const hash = hashedPayload.toLowerCase();
+    const CanonicalHeaders = this.createCanonicalHeader();
+    // var CanonicalURI =  encodeURIComponent(this.UriPath);
+    return (
+      'GET'
+      + `\n${this.UriPath}\n${this.CanonicalQueryString}\n${CanonicalHeaders}\n${this.SignedHeaders}\n${hash}`
+    );
+  },
+
+  createCanonicalHeader: function () {
+    const headers = {
+      host: this.Host,
+      'x-amz-date': this.Date
+    };
+    return Object.keys(headers)
+      .map((key) => `${key}:${headers[key]}`)
+      .join('\n')
+      .concat('\n');
+  },
+
+  getStringToSignIn: function () {
+    const hashCanonical = this.CryptoJS.SHA256(
+      this.createCanonicalRequest()
+    ).toString(this.CryptoJS.enc.Hex);
+    const hashLower = hashCanonical.toLowerCase();
+    return `AWS4-HMAC-SHA256\n${this.Date}\n${this.Scope}\n${hashLower}`;
+  },
+
+  getSigningKey: function () {
+    const kDate = this.CryptoJS.HmacSHA256(
+      this.Date.substring(0, 8),
+      `AWS4${encodeURI(this.SecretKey)}`
+    );
+    const kRegion = this.CryptoJS.HmacSHA256(this.Region, kDate);
+    const kService = this.CryptoJS.HmacSHA256(this.Service, kRegion);
+    const kSigning = this.CryptoJS.HmacSHA256('aws4_request', kService);
+
+    return kSigning;
+  },
+
+  getSignature: function () {
+    const signKey = this.getSigningKey();
+    const stringToSign = this.getStringToSignIn();
+    return this.CryptoJS.algo.HMAC.create(this.CryptoJS.algo.SHA256, signKey)
+      .update(stringToSign)
+      .finalize()
+      .toString(this.CryptoJS.enc.Hex);
+  },
+
+  setAuthorization: function () {
+    const signature = this.getSignature();
+    return `AWS4-HMAC-SHA256 Credential=${this.AccessID}/${this.Scope}, SignedHeaders=${this.SignedHeaders}, Signature=${signature}`;
+  },
+
+  type: 'AWSSigningRequest'
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-01-18 07:48:44</sys_created_on>
+        <sys_id>f85ef49c1b242510c3a2877ddc4bcbbe</sys_id>
+        <sys_name>AWSSigningRequest</sys_name>
+        <sys_package display_value="Cloud REST API Util" source="x_417839_cloud_res">21f21beb1b542110c3a2877ddc4bcb79</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Cloud REST API Util">21f21beb1b542110c3a2877ddc4bcb79</sys_scope>
+        <sys_update_name>sys_script_include_f85ef49c1b242510c3a2877ddc4bcbbe</sys_update_name>
+    </sys_script_include>
+</record_update>

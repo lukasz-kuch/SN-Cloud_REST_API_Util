@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ui_page">
+    <sys_ui_page action="INSERT_OR_UPDATE">
+        <category>general</category>
+        <client_script><![CDATA[/* eslint-disable prefer-template */
+/* eslint-disable prefer-arrow-callback */
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-use-before-define */
+/* eslint-disable no-var */
+
+var cloudScript = {
+  AZURE: 'AzureCloudUtil',
+  VCENTER: 'VMwareCloudUtil',
+  AWS: 'AWSCloudUtil'
+};
+
+// displaying tab content
+$j('#api_client_tab').hide();
+$j(document).ready(function () {
+  $j('#tabs li').click(function () {
+    $j('#tabs li').removeClass('active');
+    $j(this).addClass('active');
+    $j('.tab-content').hide();
+    $j($j(this).find('a').attr('href')).fadeIn();
+    //  At the end, we add return false so that the click on the link is not executed
+    return false;
+  });
+});
+
+// on checkbox check action
+$j('#checkbox').click(function () {
+  if ($j(this).is(':checked')) {
+    $j('#request_body').removeClass('hidden');
+  } else {
+    $j('#request_body').addClass('hidden');
+  }
+});
+
+// get service accunt by provider name
+function addServiceAccounts() {
+  var provider = gel('provider').value;
+  var serviceAccountLookUp = gel('lookup.service_account');
+  document.getElementById('sys_display.service_account').value = '';
+  if (provider !== 'AWS') $j('.region-container').hide();
+  serviceAccountLookUp.setAttribute(
+    'onclick',
+    "mousePositionSave(event); reflistOpen( 'service_account', 'not', 'cmdb_ci_cloud_service_account', '', 'false','QUERY:active=true', 'datacenter_typeLIKE"
+      + provider
+      + "', '')"
+  );
+}
+
+// set base URL for API call
+function setBaseUrl() {
+  var saGr = new GlideRecord('cmdb_ci_cloud_service_account');
+  saGr.get(gel('service_account').value);
+  switch (gel('provider').value) {
+    case 'AZURE':
+      $j('#regions').empty();
+      $j('#api_client_tab').removeClass('hidden');
+      $j('#baseUrl')
+        .text(
+          'https://management.azure.com/subscriptions/'
+            + saGr.account_id.toString()
+        )
+        .change();
+      break;
+    case 'VCENTER':
+      $j('#regions').empty();
+      $j('#api_client_tab').removeClass('hidden');
+      $j('#baseUrl')
+        .text(saGr.datacenter_url.toString().replace('/sdk', '').trim())
+        .change();
+      break;
+    case 'AWS':
+      getAWSRegion(gel('service_account').value);
+      $j('#api_client_tab').removeClass('hidden');
+      break;
+    default:
+      break;
+  }
+}
+
+// get AWS regions used in requst url
+function getAWSRegion(serviceAccountSysId) {
+  var grAjax;
+  if (document.getElementById('regions').length > 0) return;
+  grAjax = new GlideAjax('CloudGenericUtil');
+  grAjax.addParam('sysparm_name', 'getAWSRegions');
+  grAjax.addParam('sysparm_serviceAccount', serviceAccountSysId);
+  grAjax.getXMLAnswer(getResponse);
+
+  function getResponse(response) {
+    var regions = JSON.parse(response);
+    $j('#regions').removeClass('hidden');
+    $j('.region-container').css('display', 'block');
+    $j('#regions').append($j('<option></option>').text('Select'));
+    $j.each(regions, function (key, value) {
+      $j('#regions').append($j('<option></option>').text(value));
+    });
+    // $('#regions').prop('required',true);
+  }
+}
+
+function setAWSBaseUrl() {
+  $j('#baseUrl')
+    .text('https://ec2.' + gel('regions').value + '.amazonaws.com')
+    .change();
+}
+
+// execute http request for midserver script include execution
+function onClickScripInclude() {
+  var grAjax;
+  var parsedResponse;
+  var ajaxScript = cloudScript[gel('provider').value];
+  $j('#spinner').removeClass('hidden');
+  $j('#response').empty();
+  $j('#response_container').addClass('hidden');
+  grAjax = new GlideAjax(ajaxScript);
+  grAjax.addParam('sysparm_name', 'executeScriptInclude');
+  grAjax.addParam('sysparm_serviceAccount', gel('service_account').value);
+  grAjax.addParam('sysparm_mid', gel('sys_display.mid_server').value);
+  grAjax.addParam('sysparm_script', gel('code').value);
+  if (gel('provider').value === 'AWS') {
+    grAjax.addParam('sysparm_region', gel('regions').value);
+  }
+  grAjax.getXMLAnswer(getResponse);
+
+  function getResponse(response) {
+    $j('#spinner').addClass('hidden');
+    try {
+      parsedResponse = JSON.parse(response);
+    } catch (e) {
+      $j('#response').text(response);
+    }
+
+    $j('#response').text(JSON.stringify(parsedResponse, undefined, 4)).change();
+    $j('#response_container').removeClass('hidden');
+  }
+}
+
+// execute api client call
+function onClickApi() {
+  var grAjax;
+  var parsedResponse;
+  var payload = $j('#jsonData').val() || '';
+  var ajaxScript = cloudScript[gel('provider').value];
+  $j('#spinner').removeClass('hidden');
+  $j('#response').empty();
+  $j('#response_container').addClass('hidden');
+  grAjax = new GlideAjax(ajaxScript);
+  grAjax.addParam('sysparm_name', 'executeAPI');
+  grAjax.addParam('sysparm_method', gel('method').value);
+  grAjax.addParam('sysparm_serviceAccount', gel('service_account').value);
+  grAjax.addParam('sysparm_mid', gel('sys_display.mid_server').value);
+  grAjax.addParam('sysparm_endpoint', gel('endpoint').value);
+  grAjax.addParam('sysparm_baseUrl', $j('#baseUrl').text());
+  if (gel('provider').value === 'AWS') {
+    grAjax.addParam('sysparm_region', gel('regions').value);
+  }
+  grAjax.addParam('sysparm_payload', payload);
+  grAjax.getXMLAnswer(getResponse);
+
+  function getResponse(response) {
+    $j('#spinner').addClass('hidden');
+    try {
+      parsedResponse = JSON.parse(response);
+    } catch (e) {
+      $j('#response').text(response);
+    }
+    $j('#response').text(JSON.stringify(parsedResponse, undefined, 4)).change();
+    $j('#response_container').removeClass('hidden');
+  }
+}
+
+// formatting request body data (JSON)
+function prettifyJson() {
+  var pretty;
+  var obj;
+  var jsonText = $j('#jsonData').val();
+  try {
+    obj = JSON.parse(jsonText);
+    pretty = JSON.stringify(obj, undefined, 4);
+    $j('#jsonData').val(pretty).change();
+  } catch (err) {
+    alert(err);
+  }
+}
+
+// empty response
+function clearResponse() {
+  $j('#response').empty();
+  $j('#response_container').addClass('hidden');
+}
+]]></client_script>
+        <description/>
+        <direct>false</direct>
+        <endpoint>x_417839_cloud_res_rest_api_page.do</endpoint>
+        <html><![CDATA[<?xml version="1.0" encoding="utf-8" ?>
+<j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide" xmlns:j2="null" xmlns:g2="null">
+  <html>
+  <head>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <style type="text/css">
+      #tabs li:active {
+        background-color: red;
+      }
+      .panel-body {
+        background-color: silver;
+      }
+      #code {
+        height: 100px;
+      }
+      #endpoint {
+        width: 500px;
+      }
+      div.hidden {
+        display: none
+      }
+
+      h1 {
+        text-align: center;
+        padding: 10px;
+      }
+
+      #jsonData {
+        height: 200px;
+      }
+
+      #code::placeholder {
+        color: red;
+      }
+
+      .region-container {
+        display: none;
+      }
+
+      .tab-content,
+      #prettify,
+      .region-container {
+        margin-top: 10px;
+      }
+
+      .loader {
+        margin: 0 auto;
+        border: 10px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 10px solid #3498db;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Cloud REST API Util </h1>
+    <div class="col-sm-3">
+      <div class="panel-group">
+        <div class="panel panel-info">
+          <div class="panel-heading">Cloud Credentials</div>
+          <div id="credentialPanel" class="panel-body">
+            <div class="form-group">
+              <label>Provider: </label>
+              <select name="provider" id="provider" class="form-control" onChange="addServiceAccounts()">
+                <option value="" selected="true" disabled="true">
+                  --Select Provider--
+                </option>
+                <option>AWS</option>
+                <option>AZURE</option>
+                <option disabled="true">GOOGLE</option>
+                <option disabled="true" >VCENTER</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Service Account: </label>
+              <g:ui_reference name="service_account" id="service_account" table="cmdb_ci_cloud_service_account"
+                completer="AJAXTableCompleter" query="nameLIKENone" onChange="setBaseUrl()" />
+              <div class="region-container">
+                <label>Region:</label>
+                <select class="form-control" id="regions" onChange="setAWSBaseUrl()"></select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-group">
+        <div class="panel panel-info">
+          <div class="panel-heading">Mid Server</div>
+          <div class="panel-body">
+            <div class="form-group">
+              <label>MID Server: </label>
+              <g:ui_reference name="mid_server" id="mid_server" table="ecc_agent" query="status=Up" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-9">
+      <div class="panel-group">
+        <div class="panel panel-primary">
+          <div class="panel-heading">API Request</div>
+          <div class="panel-body" id="tab-panel">
+            <ul id="tabs" class="nav nav-tabs">
+              <li class="tab_list_script active" data-toggle="tooltip"  data-placement="top" title="AZURE, VCENTER, AWS">
+                <a data-toggle="tab" href="#mid_script_tab" rel="mid_script_tab">MID Server Scripts</a>
+              </li>
+              <li class="tab_list_api" data-toggle="tooltip"  data-placement="top" title="AZURE, VCENTER, AWS">
+                <a id="api_tab" data-toggle="tab" href="#api_client_tab" rel="api_client_tab">API Client</a>
+              </li>
+            </ul>
+            <div class="tab-container">
+              <div id="mid_script_tab" class="tab-content">
+                <form>
+                  <div class="form-group" id="mid_script">
+                    <span>*** Please use always 'params' as a parameter when calling MidServer Script Include to execute cloud operation-> e.g. AzureCloudAPIBase(params). In other cases is not required.</span>
+                    <textarea id="code" class="form-control" required="true">
+                      </textarea>
+                  </div>
+                  <div>
+                    <button id="execute" type="button" class="btn btn-primary" onclick="onClickScripInclude()">
+                      Execute
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div id="api_client_tab" class="tab-content">
+                <form>
+                  <div class="row">
+                    <div class="form-group col-sm-2">
+                      <select id="method" class="form-control" required="true">
+                        <option value="" selected="true" disabled="true" hidden="true">
+                          METHOD
+                        </option>
+                        <option>GET</option>
+                        <option>POST</option>
+                        <option>PUT</option>
+                        <option>PATCH</option>
+                        <option>DELETE</option>
+                      </select>
+                    </div>
+                    <div class="form-group col-sm-10">
+                      <div class="input-group">
+                        <div class="input-group-addon">
+                          <span id="baseUrl">Base URL</span>
+                        </div>
+                        <div>
+                          <input type="text" id="endpoint" class="form-control" placeholder="Endpoint URL"
+                            required="true" />
+                        </div>
+                        <div class="input-group-btn">
+                          <button id="send" class="btn btn-success" type="button" onclick="onClickApi()">
+                            Send
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="checkbox">
+                    <label><input id="checkbox" type="checkbox" value="" />Request
+                      Body (JSON)</label>
+                  </div>
+                </form>
+                <div id="request_body" class="form-group hidden">
+                  <textarea class="form-control" id="jsonData"></textarea>
+                  <div>
+                    <button id="prettify" type="button" class="btn btn-danger" onclick="prettifyJson()">
+                      Prettify
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-group">
+        <div class="panel panel-success">
+          <div class="panel-heading">Response</div>
+          <div class="panel-body">
+            <div id="spinner" class="loader hidden"></div>
+            <div id="response_container" class="hidden">
+              <pre id="response"></pre>
+            </div>
+            <div>
+              <button id="clear" type="submit" class="btn btn-danger" onclick="clearResponse()">
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>
+</j:jelly>
+]]></html>
+        <name>rest_api_page</name>
+        <processing_script/>
+        <sys_class_name>sys_ui_page</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-01-16 10:44:53</sys_created_on>
+        <sys_id>50739b2f1b542110c3a2877ddc4bcb55</sys_id>
+        <sys_name>rest_api_page</sys_name>
+        <sys_package display_value="Cloud REST API Util" source="x_417839_cloud_res">21f21beb1b542110c3a2877ddc4bcb79</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Cloud REST API Util">21f21beb1b542110c3a2877ddc4bcb79</sys_scope>
+        <sys_update_name>sys_ui_page_50739b2f1b542110c3a2877ddc4bcb55</sys_update_name>
+    </sys_ui_page>
+</record_update>

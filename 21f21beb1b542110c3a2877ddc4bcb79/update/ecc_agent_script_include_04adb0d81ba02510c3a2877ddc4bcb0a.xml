@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="global" table="ecc_agent_script_include">
+    <ecc_agent_script_include action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <description/>
+        <name>AzureCloudAPI</name>
+        <script><![CDATA[/* eslint-disable prefer-template */
+/* eslint-disable no-var */
+var AzureCloudAPI = Class.create();
+AzureCloudAPI.prototype = {
+  HTTPRequest: Packages.com.glide.communications.HTTPRequest,
+
+  initialize: function () {
+    this.payload = probe.getParameter('payload');
+    this.clientId = probe.getParameter('clientId');
+    this.tenantId = probe.getParameter('tenantId');
+    this.secretKey = probe.getParameter('secretKey');
+    this.endpoint = probe.getParameter('endpoint');
+    this.subscriptionId = probe.getParameter('subscriptionId');
+    this.baseUrl = 'https://management.azure.com/subscriptions/' + this.subscriptionId;
+  },
+
+  GET: function () {
+    var response;
+    var responseBody;
+    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    request.addHeader('Authorization', this.getToken());
+    request.addHeader('Content-Type', 'application/json');
+    response = request.get();
+    responseBody = this.getResponse(response);
+
+    return responseBody;
+  },
+
+  //     POST: function() {
+  //         var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+  //         request.addHeader("Authorization", this.getToken());
+  //         request.addHeader("Content-Type", "application/json");
+  //         var response = request.post();
+  //         var responseBody = this.getResponse(response);
+
+  //         return responseBody;
+  //     },
+
+  PUT: function () {
+    var response;
+    var responseBody;
+    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    request.addHeader('Authorization', this.getToken());
+    request.addHeader('Content-Type', 'application/json');
+    response = request.put(this.payload);
+    responseBody = this.getResponse(response);
+
+    return responseBody;
+  },
+
+  PATCH: function () {
+    var response;
+    var responseBody;
+    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    request.addHeader('Authorization', this.getToken());
+    request.addHeader('Content-Type', 'application/json');
+    response = request.patch(this.payload);
+    responseBody = this.getResponse(response);
+
+    return responseBody;
+  },
+
+  DELETE: function () {
+    var response;
+    var responseBody;
+    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    request.addHeader('Authorization', this.getToken());
+    request.addHeader('Content-Type', 'application/json');
+    response = request.del();
+    responseBody = this.getResponse(response);
+
+    return responseBody;
+  },
+
+  getResponse: function (response) {
+    var status = response.getStatusCode();
+    var responseBody = JSON.parse(response.getBody());
+    var jsonObj = responseBody || '';
+    if (status < '200' || status >= '300') {
+      return JSON.stringify({
+        'Failed with status code': status,
+        ErrorMessage: responseBody
+      });
+    }
+    return JSON.stringify({
+      'status code': status,
+      response: jsonObj
+    });
+  },
+
+  getToken: function () {
+    // eslint-disable-next-line new-cap
+    var msg;
+    var tokenMgr = new Packages.com.snc.cmp.connector.util.AzureTokenManager.getTokenManager();
+    var token;
+    try {
+      token = tokenMgr.getToken(this.clientId, this.tenantId, this.secretKey);
+    } catch (e) {
+      msg = e instanceof Packages.java.lang.RuntimeException
+        ? e.getMessage()
+        : e.toString();
+      throw ms.log(msg);
+    }
+    return token;
+  },
+
+  type: 'AzureCloudAPI'
+};
+]]></script>
+        <sys_class_name>ecc_agent_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-01-18 07:44:44</sys_created_on>
+        <sys_domain>global</sys_domain>
+        <sys_domain_path>/</sys_domain_path>
+        <sys_id>04adb0d81ba02510c3a2877ddc4bcb0a</sys_id>
+        <sys_name>AzureCloudAPI</sys_name>
+        <sys_overrides/>
+        <sys_package display_value="Cloud REST API Util" source="x_417839_cloud_res">21f21beb1b542110c3a2877ddc4bcb79</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Cloud REST API Util">21f21beb1b542110c3a2877ddc4bcb79</sys_scope>
+        <sys_update_name>ecc_agent_script_include_04adb0d81ba02510c3a2877ddc4bcb0a</sys_update_name>
+    </ecc_agent_script_include>
+</record_update>

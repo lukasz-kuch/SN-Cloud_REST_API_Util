@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="global" table="ecc_agent_script_include">
+    <ecc_agent_script_include action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <description/>
+        <name>AWSCloudAPI</name>
+        <script><![CDATA[/* eslint-disable no-var */
+var AWSCloudAPI = Class.create();
+AWSCloudAPI.prototype = {
+
+  HTTPRequest: Packages.com.glide.communications.HTTPRequest,
+  xmlHelper: new XMLHelper(),
+  initialize: function () {
+    this.date = probe.getParameter('date');
+    this.endpoint = probe.getParameter('endpoint');
+    this.authorization = probe.getParameter('authorization');
+    this.paylod = probe.getParameter('payload');
+    this.baseUrl = probe.getParameter('baseUrl');
+  },
+
+  GET: function () {
+    var response;
+    var responseBody;
+    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    request.addHeader('Authorization', this.authorization);
+    // request.addHeader("Accept", "application/xml");
+    request.addHeader('X-Amz-Date', this.date);
+    response = request.get();
+    responseBody = this.getResponse(response);
+
+    return responseBody;
+  },
+
+  POST: function () {
+    var response;
+    var responseBody;
+    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    request.addHeader('Authorization', this.getToken());
+    request.addHeader('Content-Type', 'application/json');
+    response = request.post();
+    responseBody = this.getResponse(response);
+
+    return JSON.stringify(responseBody);
+  },
+
+  PUT: function () {
+    var response;
+    var responseBody;
+    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    request.addHeader('Authorization', this.getToken());
+    request.addHeader('Content-Type', 'application/json');
+    response = request.get();
+    responseBody = this.getResponse(response);
+
+    return JSON.stringify(responseBody);
+  },
+
+  PATCH: function () {
+    var response;
+    var responseBody;
+    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    request.addHeader('Authorization', this.getToken());
+    request.addHeader('Content-Type', 'application/json');
+    response = request.get();
+    responseBody = this.getResponse(response);
+
+    return JSON.stringify(responseBody);
+  },
+
+  DELETE: function () {
+    var response;
+    var responseBody;
+    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    request.addHeader('Authorization', this.getToken());
+    request.addHeader('Content-Type', 'application/json');
+    response = request.get();
+    responseBody = this.getResponse(response);
+
+    return JSON.stringify(responseBody);
+  },
+
+  getResponse: function (response) {
+    var xmlHelp;
+    var status = response.getStatusCode();
+    var responseBody = response.getBody().toString();
+    var xmlObj = responseBody || '';
+    if (status < '200' || status >= '300') {
+      return JSON.stringify({
+        'Failed with status code': status,
+        ErrorMessage: responseBody
+      });
+    }
+    xmlHelp = this.xmlHelper.toObject(xmlObj.toString());
+    return JSON.stringify(xmlHelp);
+  },
+
+  getToken: function () {
+    var msg;
+    // eslint-disable-next-line new-cap
+    var tokenMgr = new Packages.com.snc.cmp.connector.util.AzureTokenManager.getTokenManager();
+    var token;
+    try {
+      token = tokenMgr.getToken(this.clientId, this.tenantId, this.secretKey);
+    } catch (e) {
+      msg = e instanceof Packages.java.lang.RuntimeException
+        ? e.getMessage()
+        : e.toString();
+      throw ms.log(msg);
+    }
+    return token;
+  },
+
+  type: 'AWSCloudAPI'
+};
+]]></script>
+        <sys_class_name>ecc_agent_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-01-18 07:43:55</sys_created_on>
+        <sys_domain>global</sys_domain>
+        <sys_domain_path>/</sys_domain_path>
+        <sys_id>533db81c1b242510c3a2877ddc4bcb09</sys_id>
+        <sys_name>AWSCloudAPI</sys_name>
+        <sys_overrides/>
+        <sys_package display_value="Cloud REST API Util" source="x_417839_cloud_res">21f21beb1b542110c3a2877ddc4bcb79</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Cloud REST API Util">21f21beb1b542110c3a2877ddc4bcb79</sys_scope>
+        <sys_update_name>ecc_agent_script_include_533db81c1b242510c3a2877ddc4bcb09</sys_update_name>
+    </ecc_agent_script_include>
+</record_update>

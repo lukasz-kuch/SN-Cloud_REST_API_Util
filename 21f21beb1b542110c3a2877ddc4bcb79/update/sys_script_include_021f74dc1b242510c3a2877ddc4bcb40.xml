@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_417839_cloud_res.VMwareCloudUtil</api_name>
+        <caller_access/>
+        <client_callable>true</client_callable>
+        <description/>
+        <name>VMwareCloudUtil</name>
+        <script><![CDATA[const VMwareCloudUtil = Class.create();
+VMwareCloudUtil.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
+
+  executeScriptInclude() {
+    const automation_api = new sn_automation.AutomationAPI();
+    const util = new CloudGenericUtil();
+    const serviceAccountData = util.getServiceAccount(
+      this.getParameter('sysparm_serviceAccount')
+    );
+    const probeName = 'VMwareScriptIncludeExecution';
+    const loginParams = 'var params = new VMwareLoginParams;';
+    const script = this.getParameter('sysparm_script');
+    const jspr = new JavascriptProbe(this.getParameter('sysparm_mid'));
+    jspr.setName(probeName);
+    jspr.setJavascript(loginParams + script);
+    jspr.addParameter('url', serviceAccountData.datacenter_url);
+    jspr.addParameter('username', serviceAccountData.credentials.user_name);
+    jspr.addParameter(
+      'password',
+      automation_api.encrypt(serviceAccountData.credentials.password)
+    );
+    jspr.addParameter('skip_sensor', 'true');
+    jspr.create();
+
+    return util.awaitEccResponse(probeName);
+  },
+
+  executeAPi() {
+    const automation_api = new sn_automation.AutomationAPI();
+    const util = new CloudGenericUtil();
+    const serviceAccountData = util.getServiceAccount(
+      this.getParameter('sysparm_serviceAccount')
+    );
+    const probeName = 'VMwareAPIExecution';
+    const script = `var req = new VMwareCloudAPI(); res = req.${
+      this.getParameter('sysparm_method')
+    }();`;
+    const jspr = new JavascriptProbe(this.getParameter('sysparm_mid'));
+    jspr.setName(probeName);
+    jspr.setJavascript(script);
+    jspr.addParameter('payload', this.getParameter('sysparm_payload'));
+    jspr.addParameter('baseUrl', serviceAccountData.datacenter_url);
+    jspr.addParameter('endpoint', this.getParameter('sysparm_endpoint'));
+    jspr.addParameter('username', serviceAccountData.credentials.user_name);
+    jspr.addParameter(
+      'password',
+      automation_api.encrypt(serviceAccountData.credentials.password)
+    );
+    jspr.addParameter('skip_sensor', 'true');
+    jspr.create();
+
+    return util.awaitEccResponse(probeName);
+  },
+
+  type: 'VMwareCloudUtil'
+});
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-01-18 07:51:06</sys_created_on>
+        <sys_id>021f74dc1b242510c3a2877ddc4bcb40</sys_id>
+        <sys_name>VMwareCloudUtil</sys_name>
+        <sys_package display_value="Cloud REST API Util" source="x_417839_cloud_res">21f21beb1b542110c3a2877ddc4bcb79</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Cloud REST API Util">21f21beb1b542110c3a2877ddc4bcb79</sys_scope>
+        <sys_update_name>sys_script_include_021f74dc1b242510c3a2877ddc4bcb40</sys_update_name>
+    </sys_script_include>
+</record_update>
