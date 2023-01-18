@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_417839_cloud_res.AWSCloudUtil</api_name>
+        <caller_access/>
+        <client_callable>true</client_callable>
+        <description/>
+        <name>AWSCloudUtil</name>
+        <script><![CDATA[const AWSCloudUtil = Class.create();
+AWSCloudUtil.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
+//   initialize: function () {
+//     global.AbstractAjaxProcessor.prototype.initialize.call(this);
+//     // eslint-disable-next-line camelcase
+//     this.automationApi = new sn_automation.AutomationAPI();
+//   },
+
+  executeScriptInclude: function () {
+    const automationApi = new sn_automation.AutomationAPI();
+    const util = new CloudGenericUtil();
+    const serviceAccountData = util.getServiceAccount(
+      this.getParameter('sysparm_serviceAccount')
+    );
+    const probeName = 'AWSScriptIncludeExecution';
+    const loginParams = 'var params = new AWSLoginParams;';
+    const script = this.getParameter('sysparm_script');
+    const jspr = new global.JavascriptProbe(this.getParameter('sysparm_mid'));
+    jspr.setName(probeName);
+    jspr.setJavascript(loginParams + script);
+    jspr.addParameter('identity', serviceAccountData.credentials.access_key);
+    jspr.addParameter(
+      'secretKey',
+      automationApi.encrypt(serviceAccountData.credentials.secret_key)
+    );
+    jspr.addParameter('region', this.getParameter('sysparm_region'));
+    jspr.addParameter('skip_sensor', 'true');
+    jspr.create();
+
+    return util.awaitEccResponse(probeName);
+  },
+  executeAPI: function () {
+    const util = new CloudGenericUtil();
+    const dateTimeStamp = util.getDateTimeStamp();
+    const serviceAccountData = util.getServiceAccount(
+      this.getParameter('sysparm_serviceAccount')
+    );
+    const params = {
+      accessId: serviceAccountData.credentials.access_key,
+      secretKey: serviceAccountData.credentials.secret_key,
+      region: this.getParameter('sysparm_region'),
+      endpoint: this.getParameter('sysparm_endpoint'),
+      baseUrl: this.getParameter('sysparm_baseUrl'),
+      date: dateTimeStamp
+    };
+    const awsUtil = new AWSSigningRequest(
+      JSON.stringify(params),
+      this.getParameter('sysparm_payload')
+    );
+    const auth = awsUtil.setAuthorization();
+    const probeName = 'AWSAPIExecution';
+    const script = `var req = new AWSCloudAPI(); res = req.${this.getParameter(
+      'sysparm_method'
+    )}();`;
+    const jspr = new global.JavascriptProbe(this.getParameter('sysparm_mid'));
+    jspr.setName(probeName);
+    jspr.setJavascript(script);
+    jspr.addParameter('authorization', auth);
+    jspr.addParameter('baseUrl', params.baseUrl);
+    jspr.addParameter('endpoint', params.endpoint);
+    jspr.addParameter('date', dateTimeStamp);
+    jspr.addParameter('payload', this.getParameter('sysparm_payload'));
+    jspr.addParameter('skip_sensor', 'true');
+    jspr.create();
+
+    return util.awaitEccResponse(probeName);
+  },
+
+  type: 'AWSCloudUtil'
+});
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-01-18 07:46:58</sys_created_on>
+        <sys_id>040eb09c1b242510c3a2877ddc4bcb0c</sys_id>
+        <sys_name>AWSCloudUtil</sys_name>
+        <sys_package display_value="Cloud REST API Util" source="x_417839_cloud_res">21f21beb1b542110c3a2877ddc4bcb79</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Cloud REST API Util">21f21beb1b542110c3a2877ddc4bcb79</sys_scope>
+        <sys_update_name>sys_script_include_040eb09c1b242510c3a2877ddc4bcb0c</sys_update_name>
+    </sys_script_include>
+</record_update>

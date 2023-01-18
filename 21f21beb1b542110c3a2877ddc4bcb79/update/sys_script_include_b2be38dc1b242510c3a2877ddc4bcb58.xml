@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_417839_cloud_res.AzureCloudUtil</api_name>
+        <caller_access/>
+        <client_callable>true</client_callable>
+        <description/>
+        <name>AzureCloudUtil</name>
+        <script><![CDATA[const AzureCloudUtil = Class.create();
+AzureCloudUtil.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
+
+  executeScriptInclude: function () {
+    // eslint-disable-next-line camelcase
+    const automationApi = new sn_automation.AutomationAPI();
+    const util = new CloudGenericUtil();
+    const serviceAccountData = util.getServiceAccount(
+      this.getParameter('sysparm_serviceAccount')
+    );
+    const probeName = 'AzureScriptIncludeExecution';
+    const loginParams = 'var params = new AzureLoginParams();';
+    const script = this.getParameter('sysparm_script');
+    let scriptToExecute = script;
+    if (script.toString().indexOf('params') !== -1) scriptToExecute = loginParams + script;
+    const jspr = new global.JavascriptProbe(this.getParameter('sysparm_mid'));
+    jspr.setName(probeName);
+    jspr.setJavascript(scriptToExecute);
+    jspr.addParameter('subscriptionId', serviceAccountData.account_id);
+    jspr.addParameter('tenantId', serviceAccountData.credentials.tenant_id);
+    jspr.addParameter('clientId', serviceAccountData.credentials.client_id);
+    jspr.addParameter(
+      'secretKey',
+      automationApi.encrypt(serviceAccountData.credentials.secret_key)
+    );
+
+    jspr.addParameter('skip_sensor', 'true');
+    jspr.create();
+
+    return util.awaitEccResponse(probeName);
+  },
+
+  executeAPI: function () {
+    // eslint-disable-next-line camelcase
+    const automationApi = new sn_automation.AutomationAPI();
+    const util = new CloudGenericUtil();
+    const serviceAccountData = util.getServiceAccount(
+      this.getParameter('sysparm_serviceAccount')
+    );
+    const probeName = 'AzureAPIExecution';
+    const script = `const req = new AzureCloudAPI(); res = req.${this.getParameter(
+      'sysparm_method'
+    )}();`;
+    const jspr = new global.JavascriptProbe(this.getParameter('sysparm_mid'));
+    jspr.setName(probeName);
+    jspr.setJavascript(script);
+    jspr.addParameter('subscriptionId', serviceAccountData.account_id);
+    jspr.addParameter('tenantId', serviceAccountData.credentials.tenant_id);
+    jspr.addParameter('clientId', serviceAccountData.credentials.client_id);
+    jspr.addParameter('endpoint', this.getParameter('sysparm_endpoint'));
+    jspr.addParameter('payload', this.getParameter('sysparm_payload'));
+    jspr.addParameter(
+      'secretKey',
+      automationApi.encrypt(serviceAccountData.credentials.secret_key)
+    );
+    jspr.addParameter('skip_sensor', 'true');
+    jspr.create();
+
+    return util.awaitEccResponse(probeName);
+  },
+
+  type: 'AzureCloudUtil'
+});
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-01-18 07:49:38</sys_created_on>
+        <sys_id>b2be38dc1b242510c3a2877ddc4bcb58</sys_id>
+        <sys_name>AzureCloudUtil</sys_name>
+        <sys_package display_value="Cloud REST API Util" source="x_417839_cloud_res">21f21beb1b542110c3a2877ddc4bcb79</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Cloud REST API Util">21f21beb1b542110c3a2877ddc4bcb79</sys_scope>
+        <sys_update_name>sys_script_include_b2be38dc1b242510c3a2877ddc4bcb58</sys_update_name>
+    </sys_script_include>
+</record_update>

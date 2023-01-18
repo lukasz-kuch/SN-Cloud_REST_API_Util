@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="global" table="ecc_agent_script_include">
+    <ecc_agent_script_include action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <description/>
+        <name>VMwareCloudAPI</name>
+        <script><![CDATA[/* eslint-disable prefer-template */
+/* eslint-disable no-var */
+var VMwareCloudAPI = Class.create();
+
+VMwareCloudAPI.prototype = {
+  StringUtil: Packages.com.glide.util,
+
+  initialize: function () {
+    this.baseUrl = probe.getParameter('baseUrl').replace('/sdk', '').trim();
+    this.endpoint = probe.getParameter('endpoint');
+    this.userName = probe.getParameter('username');
+    this.password = probe.getParameter('password');
+    this.payload = probe.getParameter('payload');
+    this.sessionId = this.login();
+  },
+
+  GET: function () {
+    var response;
+    var responseBody;
+    var request = this.invokeRequest(encodeURI(this.baseUrl + this.endpoint));
+    request.addHeader('vmware-api-session-id', this.sessionId);
+    request.addHeader('Content-Type', 'application/json');
+    response = request.get();
+    responseBody = this.getResponse(response);
+    return responseBody;
+  },
+
+  //     PUT: function(payload) {
+  //         var response;
+  //         var request = this.invokeRequest(encodeURI(this.baseUrl + this.endpoint));
+  //         request.addHeader("vmware-api-session-id", this.sessionId);
+  //         request.addHeader("Content-Type", "application/json");
+  //         response = request.put(payload);
+  //         var responseBody = this.getResponse(response);
+  //         return responseBody;
+  //     },
+
+  POST: function () {
+    var response;
+    var responseBody;
+    var request = this.invokeRequest(encodeURI(this.baseUrl + this.endpoint));
+    request.addHeader('vmware-api-session-id', this.sessionId);
+    request.addHeader('Content-Type', 'application/json');
+    response = request.post(this.payload);
+    responseBody = this.getResponse(response);
+    return responseBody;
+  },
+
+  PATCH: function () {
+    var response;
+    var responseBody;
+    var request = this.invokeRequest(encodeURI(this.baseUrl + this.endpoint));
+    request.addHeader('vmware-api-session-id', this.sessionId);
+    request.addHeader('Content-Type', 'application/json');
+    response = request.patch(this.payload);
+    responseBody = this.getResponse(response);
+    return responseBody;
+  },
+
+  DELETE: function () {
+    var response;
+    var responseBody;
+    var request = this.invokeRequest(encodeURI(this.baseUrl + this.endpoint));
+    request.addHeader('vmware-api-session-id', this.sessionId);
+    request.addHeader('Content-Type', 'application/json');
+    response = request.del();
+    responseBody = this.getResponse(response);
+    return responseBody;
+  },
+
+  invokeRequest: function (baseUrl) {
+    var request = new Packages.com.glide.communications.HTTPRequest(baseUrl);
+    return request;
+  },
+
+  getResponse: function (response) {
+    var status = response.getStatusCode();
+    var responseBody = JSON.parse(response.getBody());
+    var jsonObj = responseBody || '';
+    if (status < '200' || status >= '300') {
+      return JSON.stringify({
+        'Failed with status code': status,
+        ErrorMessage: responseBody
+      });
+    }
+    return JSON.stringify({
+      'status code': status,
+      response: jsonObj
+    });
+  },
+
+  login: function () {
+    var authResponse;
+    var responseBody;
+    var jsonObj;
+    var basicAuth = 'Basic ' + this.StringUtil.base64Encode(this.userName + ':' + this.password);
+    var baseUrlURL = this.baseUrl + '/rest/com/vmware/cis/session';
+    var request = new Packages.com.glide.communications.HTTPRequest(baseUrlURL);
+    request.addHeader('Authorization', basicAuth);
+    request.addHeader('Content-Type', 'application/json');
+    authResponse = request.post({});
+    responseBody = authResponse.getBody();
+    jsonObj = JSON.parse(responseBody);
+    return jsonObj.value;
+  },
+
+  type: 'VMwareCloudAPI'
+};
+]]></script>
+        <sys_class_name>ecc_agent_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-01-18 07:45:30</sys_created_on>
+        <sys_domain>global</sys_domain>
+        <sys_domain_path>/</sys_domain_path>
+        <sys_id>44dd78101b202510c3a2877ddc4bcb70</sys_id>
+        <sys_name>VMwareCloudAPI</sys_name>
+        <sys_overrides/>
+        <sys_package display_value="Cloud REST API Util" source="x_417839_cloud_res">21f21beb1b542110c3a2877ddc4bcb79</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Cloud REST API Util">21f21beb1b542110c3a2877ddc4bcb79</sys_scope>
+        <sys_update_name>ecc_agent_script_include_44dd78101b202510c3a2877ddc4bcb70</sys_update_name>
+    </ecc_agent_script_include>
+</record_update>

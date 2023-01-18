@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_security_acl_role">
+    <sys_security_acl_role action="INSERT_OR_UPDATE">
+        <sys_class_name>sys_security_acl_role</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-01-18 07:48:45</sys_created_on>
+        <sys_id>569e389c1b242510c3a2877ddc4bcbfb</sys_id>
+        <sys_name>AWSSigningRequest.admin</sys_name>
+        <sys_package display_value="Cloud REST API Util" source="x_417839_cloud_res">21f21beb1b542110c3a2877ddc4bcb79</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Cloud REST API Util">21f21beb1b542110c3a2877ddc4bcb79</sys_scope>
+        <sys_security_acl display_value="AWSSigningRequest">1a9e389c1b242510c3a2877ddc4bcbf7</sys_security_acl>
+        <sys_update_name>sys_security_acl_role_569e389c1b242510c3a2877ddc4bcbfb</sys_update_name>
+        <sys_user_role display_value="admin" name="admin">2831a114c611228501d4ea6c309d626d</sys_user_role>
+        <transaction_id/>
+    </sys_security_acl_role>
+</record_update>
