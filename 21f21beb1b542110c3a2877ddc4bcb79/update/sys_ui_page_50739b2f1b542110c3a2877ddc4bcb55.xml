@@ -36,7 +36,7 @@ $j('#checkbox').click(function () {
   }
 });
 
-// get service accunt by provider name
+// get service account by provider name
 function addServiceAccounts() {
   var provider = gel('provider').value;
   var serviceAccountLookUp = gel('lookup.service_account');
