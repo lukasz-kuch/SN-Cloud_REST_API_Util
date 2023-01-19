@@ -26,7 +26,7 @@ AWSSigningRequest.prototype = {
     this.Scope = `${this.Date.substring(0, 8)}/${this.Region}/${this.Service}/`
       + 'aws4_request';
     this.SignedHeaders = 'host;x-amz-date';
-    this.CryptoJS = new CryptoJS().CryptoJS;
+    this.CryptoJS = new Crypto().CryptoJS;
   },
 
   createCanonicalRequest: function () {
