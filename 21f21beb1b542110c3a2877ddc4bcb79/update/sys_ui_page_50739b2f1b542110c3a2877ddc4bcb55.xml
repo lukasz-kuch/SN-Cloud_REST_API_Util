@@ -14,6 +14,15 @@ var cloudScript = {
   AWS: 'AWSCloudUtil'
 };
 
+// on checkbox check action
+$j('#checkbox').click(function () {
+  if ($j(this).is(':checked')) {
+    $j('#request_body').removeClass('hidden');
+  } else {
+    $j('#request_body').addClass('hidden');
+  }
+});
+
 // displaying tab content
 $j('#api_client_tab').hide();
 $j(document).ready(function () {
@@ -27,14 +36,7 @@ $j(document).ready(function () {
   });
 });
 
-// on checkbox check action
-$j('#checkbox').click(function () {
-  if ($j(this).is(':checked')) {
-    $j('#request_body').removeClass('hidden');
-  } else {
-    $j('#request_body').addClass('hidden');
-  }
-});
+
 
 // get service account by provider name
 function addServiceAccounts() {
@@ -199,69 +201,13 @@ function clearResponse() {
         <html><![CDATA[<?xml version="1.0" encoding="utf-8" ?>
 <j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide" xmlns:j2="null" xmlns:g2="null">
   <html>
+
   <head>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-    <style type="text/css">
-      #tabs li:active {
-        background-color: red;
-      }
-      .panel-body {
-        background-color: silver;
-      }
-      #code {
-        height: 100px;
-      }
-      #endpoint {
-        width: 500px;
-      }
-      div.hidden {
-        display: none
-      }
-
-      h1 {
-        text-align: center;
-        padding: 10px;
-      }
-
-      #jsonData {
-        height: 200px;
-      }
-
-      #code::placeholder {
-        color: red;
-      }
-
-      .region-container {
-        display: none;
-      }
-
-      .tab-content,
-      #prettify,
-      .region-container {
-        margin-top: 10px;
-      }
-
-      .loader {
-        margin: 0 auto;
-        border: 10px solid #f3f3f3;
-        border-radius: 50%;
-        border-top: 10px solid #3498db;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-    </style>
+    <link href="a5ea0fb51be02110c3a2877ddc4bcb52.cssdbx" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.css" />
   </head>
+
   <body>
     <h1>Cloud REST API Util </h1>
     <div class="col-sm-3">
@@ -278,7 +224,7 @@ function clearResponse() {
                 <option>AWS</option>
                 <option>AZURE</option>
                 <option disabled="true">GOOGLE</option>
-                <option disabled="true" >VCENTER</option>
+                <option disabled="true">VCENTER</option>
               </select>
             </div>
             <div class="form-group">
@@ -311,10 +257,10 @@ function clearResponse() {
           <div class="panel-heading">API Request</div>
           <div class="panel-body" id="tab-panel">
             <ul id="tabs" class="nav nav-tabs">
-              <li class="tab_list_script active" data-toggle="tooltip"  data-placement="top" title="AZURE, VCENTER, AWS">
+              <li class="tab_list_script active" data-toggle="tooltip" data-placement="top" title="AZURE, VCENTER, AWS">
                 <a data-toggle="tab" href="#mid_script_tab" rel="mid_script_tab">MID Server Scripts</a>
               </li>
-              <li class="tab_list_api" data-toggle="tooltip"  data-placement="top" title="AZURE, VCENTER, AWS">
+              <li class="tab_list_api" data-toggle="tooltip" data-placement="top" title="AZURE, VCENTER, AWS">
                 <a id="api_tab" data-toggle="tab" href="#api_client_tab" rel="api_client_tab">API Client</a>
               </li>
             </ul>
@@ -322,7 +268,8 @@ function clearResponse() {
               <div id="mid_script_tab" class="tab-content">
                 <form>
                   <div class="form-group" id="mid_script">
-                    <span>*** Please use always 'params' as a parameter when calling MidServer Script Include to execute cloud operation-> e.g. AzureCloudAPIBase(params). In other cases is not required.</span>
+                    <span>*** Please use always 'params' as a parameter when calling MidServer Script Include to execute
+                      cloud operation-> e.g. AzureCloudAPIBase(params). In other cases is not required.</span>
                     <textarea id="code" class="form-control" required="true">
                       </textarea>
                   </div>
@@ -400,7 +347,26 @@ function clearResponse() {
         </div>
       </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/hint/javascript-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/search/searchcursor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/keymap/sublime.min.js"></script>
+    <script>
+      CodeMirror.fromTextArea(document.getElementById("code"), {
+        lineNumbers: true,
+        lineWrapping: true,
+        tabSize: 2,
+        smartIndent: true,
+        matchBrackets: true,
+        mode: 'javascript',
+        keyMap: 'sublime'
+    });
+    </script>
   </body>
+
   </html>
 </j:jelly>
 ]]></html>

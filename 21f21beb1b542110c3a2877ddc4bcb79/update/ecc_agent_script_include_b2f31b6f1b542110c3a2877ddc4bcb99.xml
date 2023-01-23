@@ -5,7 +5,6 @@
         <name>AWSLoginParams</name>
         <script><![CDATA[// eslint-disable-next-line no-var
 var AWSLoginParams = Class.create();
-
 AWSLoginParams.prototype = {
   initialize: function () {
     this.Identity = probe.getParameter('identity');
