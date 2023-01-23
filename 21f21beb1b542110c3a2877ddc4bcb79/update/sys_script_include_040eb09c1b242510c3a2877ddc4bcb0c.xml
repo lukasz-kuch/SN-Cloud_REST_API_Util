@@ -7,15 +7,11 @@
         <client_callable>true</client_callable>
         <description/>
         <name>AWSCloudUtil</name>
-        <script><![CDATA[const AWSCloudUtil = Class.create();
+        <script><![CDATA[/* eslint-disable func-names */
+const AWSCloudUtil = Class.create();
 AWSCloudUtil.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
-//   initialize: function () {
-//     global.AbstractAjaxProcessor.prototype.initialize.call(this);
-//     // eslint-disable-next-line camelcase
-//     this.automationApi = new sn_automation.AutomationAPI();
-//   },
-
   executeScriptInclude: function () {
+    // eslint-disable-next-line camelcase
     const automationApi = new sn_automation.AutomationAPI();
     const util = new CloudGenericUtil();
     const serviceAccountData = util.getServiceAccount(
