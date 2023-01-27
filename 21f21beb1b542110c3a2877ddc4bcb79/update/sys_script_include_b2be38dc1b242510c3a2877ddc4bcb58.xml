@@ -7,9 +7,9 @@
         <client_callable>true</client_callable>
         <description/>
         <name>AzureCloudUtil</name>
-        <script><![CDATA[const AzureCloudUtil = Class.create();
+        <script><![CDATA[/* eslint-disable func-names */
+const AzureCloudUtil = Class.create();
 AzureCloudUtil.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
-
   executeScriptInclude: function () {
     // eslint-disable-next-line camelcase
     const automationApi = new sn_automation.AutomationAPI();
@@ -21,7 +21,9 @@ AzureCloudUtil.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
     const loginParams = 'var params = new AzureLoginParams();';
     const script = this.getParameter('sysparm_script');
     let scriptToExecute = script;
-    if (script.toString().indexOf('params') !== -1) scriptToExecute = loginParams + script;
+    if (script.indexOf('(params)') !== -1) {
+      scriptToExecute = loginParams + script;
+    }
     const jspr = new global.JavascriptProbe(this.getParameter('sysparm_mid'));
     jspr.setName(probeName);
     jspr.setJavascript(scriptToExecute);
