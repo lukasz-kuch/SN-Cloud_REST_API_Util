@@ -7,110 +7,127 @@
         <client_callable>true</client_callable>
         <description/>
         <name>CloudGenericUtil</name>
-        <script><![CDATA[const CloudGenericUtil = Class.create();
+        <script><![CDATA[/* eslint-disable no-plusplus */
+/* eslint-disable func-names */
+const CloudGenericUtil = Class.create();
 CloudGenericUtil.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
 
-    getServiceAccount: function(serviceAccountSysId) {
-        const saGR = new GlideRecord('cmdb_ci_cloud_service_account');
-        saGR.get(serviceAccountSysId);
-        const creds = this._getCredentials(saGR.discovery_credentials);
-        return {
-            account_id: saGR.account_id.toString(),
-            datacenter_url: saGR.datacenter_url.toString(),
-            credentials: creds
-        };
-    },
+  getServiceAccount: function (serviceAccountSysId) {
+    const saGR = new GlideRecord('cmdb_ci_cloud_service_account');
+    saGR.get(serviceAccountSysId);
+    const creds = this._getCredentials(saGR.discovery_credentials);
+    return {
+      account_id: saGR.account_id.toString(),
+      datacenter_url: saGR.datacenter_url.toString(),
+      credentials: creds
+    };
+  },
 
-    getAWSRegions: function() {
-        const regions = [];
-        const gr = new GlideRecord('cmp_discovery_ldc_config');
-        gr.addQuery('service_account', this.getParameter('sysparm_serviceAccount'));
-        gr.query();
-        while (gr.next()) {
-            regions.push(gr.getDisplayValue('ldc'));
-        }
-        return JSON.stringify(regions);
-    },
+  getAWSRegions: function () {
+    const regions = [];
+    const gr = new GlideRecord('cmp_discovery_ldc_config');
+    gr.addQuery('service_account', this.getParameter('sysparm_serviceAccount'));
+    gr.query();
+    while (gr.next()) {
+      regions.push(gr.getDisplayValue('ldc'));
+    }
+    return JSON.stringify(regions);
+  },
 
-    _getCredentials: function(credGR) {
-        const credsObj = {};
-        const credsAttr = [
-            'email',
-            'access_key',
-            'user_name',
-            'password',
-            'tenant_id',
-            'client_id',
-            'secret_key'
-        ];
-        credsAttr.forEach(function(attr) {
-            if (credGR[attr]) {
-                credsObj[attr] = this._checkIfMasked(attr, credGR[attr]);
-            }
-        }, this);
-        return credsObj;
-    },
+  _getCredentials: function (credGR) {
+    const credsObj = {};
+    const credsAttr = [
+      'email',
+      'access_key',
+      'user_name',
+      'password',
+      'tenant_id',
+      'client_id',
+      'secret_key'
+    ];
+    credsAttr.forEach(function (attr) {
+      if (credGR[attr]) {
+        credsObj[attr] = this._checkIfMasked(attr, credGR[attr]);
+      }
+    }, this);
+    return credsObj;
+  },
 
-    _checkIfMasked: function(type, item) {
-        const encrypter = new global.Encrypter();
-        return type.toString() === 'password' || type.toString() === 'secret_key' ?
-            encrypter.decrypt(item) :
-            item.toString();
-    },
+  _checkIfMasked: function (type, item) {
+    const encrypter = new global.Encrypter();
+    return type.toString() === 'password' || type.toString() === 'secret_key'
+      ? encrypter.decrypt(item)
+      : item.toString();
+  },
 
-    _wait: function(time) {
-        const t1 = new GlideDateTime().getNumericValue();
-        let t2 = new GlideDateTime().getNumericValue();
-        let duration = t2 - t1;
-        while (duration < time) {
-            t2 = new GlideDateTime().getNumericValue();
-            duration = t2 - t1;
-        }
-    },
+  _wait: function (time) {
+    const t1 = new GlideDateTime().getNumericValue();
+    let t2 = new GlideDateTime().getNumericValue();
+    let duration = t2 - t1;
+    while (duration < time) {
+      t2 = new GlideDateTime().getNumericValue();
+      duration = t2 - t1;
+    }
+  },
 
-    _getXMLResponse: function(name, currentDate) {
-        const date = currentDate.split(' ');
-        const ecc = new GlideRecord('ecc_queue');
-        ecc.orderByDesc('sys_created_on');
-        ecc.addEncodedQuery(
-            `sys_created_on>javascript:gs.dateGenerate("${
+  _getXMLResponse: function (name, currentDate) {
+    const date = currentDate.split(' ');
+    const ecc = new GlideRecord('ecc_queue');
+    ecc.orderByDesc('sys_created_on');
+    ecc.addEncodedQuery(
+      `sys_created_on>javascript:gs.dateGenerate("${
         date[0]
       }", "${
         date[1]
       }")`
-        );
-        ecc.addQuery('topic', 'JavascriptProbe');
-        ecc.addQuery('name', name);
-        ecc.addQuery('queue', 'input');
-        ecc.addQuery('state', 'ready');
-        ecc.query();
-        if (ecc.next()) {
-            const xmlDoc = new XMLDocument2();
-            xmlDoc.parseXML(ecc.payload.toString());
-            const response = xmlDoc.getNodeText('//output');
-            return response;
+    );
+    ecc.addQuery('topic', 'JavascriptProbe');
+    ecc.addQuery('name', name);
+    ecc.addQuery('queue', 'input');
+    ecc.addQuery('state', 'ready');
+    ecc.query();
+    if (ecc.next()) {
+      const xmlDoc = new XMLDocument2();
+      xmlDoc.parseXML(ecc.payload.toString());
+      let response = xmlDoc.getNodeText('//output');
+      if (gs.nil(response)) {
+        try {
+          const node = xmlDoc.getNode('//results');
+          response = node.getAttribute('error');
+        } catch (e) {
+          response = e.message;
         }
-        return false;
-    },
+      }
+      return response;
+    }
+    return false;
+  },
 
-    awaitEccResponse: function(probeName) {
-        const currentTime = new GlideDateTime().getDisplayValue();
-        while (!this._getXMLResponse(probeName, currentTime)) {
-            this._wait(1000);
-        }
-        return this._getXMLResponse(probeName, currentTime);
-    },
+  awaitEccResponse: function (probeName) {
+    const currentTime = new GlideDateTime().getDisplayValue();
+    let response = this._getXMLResponse(probeName, currentTime);
+    let timeoutCounter = 0;
+    while (!response) {
+      timeoutCounter++;
+      response = this._getXMLResponse(probeName, currentTime);
+      this._wait(1000);
+      if (timeoutCounter === 30) {
+        response = 'Timeout error. Please check the logs.';
+      }
+    }
+    return response;
+  },
 
-    getProperty: function() {
-        return gs.getProperty(this.getParameter('sysparm_property_name'));
-    },
+  getProperty: function () {
+    return gs.getProperty(this.getParameter('sysparm_property_name'));
+  },
 
-    getDateTimeStamp: function() {
-        let date; {
-            const gdt = new GlideDateTime();
-            const time = gdt.getTime();
-            const t = time.getByFormat('HHmmss');
-            /**
+  getDateTimeStamp: function () {
+    let date; {
+      const gdt = new GlideDateTime();
+      const time = gdt.getTime();
+      const t = time.getByFormat('HHmmss');
+      /**
             const wd = (function () {
               const map = {
                 1: 'Mon',
@@ -124,68 +141,69 @@ CloudGenericUtil.prototype = Object.extendsObject(global.AbstractAjaxProcessor, 
               return map[`${gdt.getDayOfWeekUTC()}`];
             }());
             */
-            const d = (function() {
-                const map = {
-                    1: '01',
-                    2: '02',
-                    3: '03',
-                    4: '04',
-                    5: '05',
-                    6: '06',
-                    7: '07',
-                    8: '08',
-                    9: '09',
-                    10: '10',
-                    11: '11',
-                    12: '12',
-                    13: '13',
-                    14: '14',
-                    15: '15',
-                    16: '16',
-                    17: '17',
-                    18: '18',
-                    19: '19',
-                    20: '20',
-                    21: '21',
-                    22: '22',
-                    23: '23',
-                    24: '24',
-                    25: '25',
-                    26: '26',
-                    27: '27',
-                    28: '28',
-                    29: '29',
-                    30: '30',
-                    31: '31'
-                };
-                return map[`${gdt.getDayOfMonthUTC()}`];
-            }());
+      const d = (function () {
+        const map = {
+          1: '01',
+          2: '02',
+          3: '03',
+          4: '04',
+          5: '05',
+          6: '06',
+          7: '07',
+          8: '08',
+          9: '09',
+          10: '10',
+          11: '11',
+          12: '12',
+          13: '13',
+          14: '14',
+          15: '15',
+          16: '16',
+          17: '17',
+          18: '18',
+          19: '19',
+          20: '20',
+          21: '21',
+          22: '22',
+          23: '23',
+          24: '24',
+          25: '25',
+          26: '26',
+          27: '27',
+          28: '28',
+          29: '29',
+          30: '30',
+          31: '31'
+        };
+        return map[`${gdt.getDayOfMonthUTC()}`];
+      }());
 
-            const m = (function() {
-                const map = {
-                    1: '01',
-                    2: '02',
-                    3: '03',
-                    4: '04',
-                    5: '05',
-                    6: '06',
-                    7: '07',
-                    8: '08',
-                    9: '09',
-                    10: '10',
-                    11: '11',
-                    12: '12'
-                };
-                return map[`${gdt.getMonthUTC()}`];
-            }());
-            const y = gdt.getYearUTC();
-            date = `${y + m + d}T${t}Z`;
-        }
-        return date;
-    },
+      const m = (function () {
+        const map = {
+          1: '01',
+          2: '02',
+          3: '03',
+          4: '04',
+          5: '05',
+          6: '06',
+          7: '07',
+          8: '08',
+          9: '09',
+          10: '10',
+          11: '11',
+          12: '12'
+        };
+        return map[`${gdt.getMonthUTC()}`];
+      }());
+      const y = gdt.getYearUTC();
+      date = `${y + m + d}T${t}Z`;
+    }
+    return date;
+  },
 
-    type: 'CloudGenericUtil'
-});]]></script>
+  type: 'CloudGenericUtil'
+});
+]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2023-01-18 07:50:04</sys_created_on>

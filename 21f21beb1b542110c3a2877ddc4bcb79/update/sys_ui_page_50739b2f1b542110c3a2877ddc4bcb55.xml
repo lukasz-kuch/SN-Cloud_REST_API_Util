@@ -1,12 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ui_page">
     <sys_ui_page action="INSERT_OR_UPDATE">
         <category>general</category>
-        <client_script><![CDATA[/* eslint-disable prefer-template */
+        <client_script><![CDATA[/* eslint-disable max-len */
+/* eslint-disable func-names */
+/* eslint-disable prefer-template */
 /* eslint-disable prefer-arrow-callback */
 /* eslint-disable no-undef */
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-use-before-define */
 /* eslint-disable no-var */
+var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+  lineNumbers: true,
+  lineWrapping: true,
+  tabSize: 2,
+  smartIndent: true,
+  matchBrackets: true,
+  mode: 'javascript',
+  keyMap: 'sublime'
+});
 
 var cloudScript = {
   AZURE: 'AzureCloudUtil',
@@ -35,8 +46,6 @@ $j(document).ready(function () {
     return false;
   });
 });
-
-
 
 // get service account by provider name
 function addServiceAccounts() {
@@ -122,7 +131,7 @@ function onClickScripInclude() {
   grAjax.addParam('sysparm_name', 'executeScriptInclude');
   grAjax.addParam('sysparm_serviceAccount', gel('service_account').value);
   grAjax.addParam('sysparm_mid', gel('sys_display.mid_server').value);
-  grAjax.addParam('sysparm_script', gel('code').value);
+  grAjax.addParam('sysparm_script', editor.getValue());
   if (gel('provider').value === 'AWS') {
     grAjax.addParam('sysparm_region', gel('regions').value);
   }
@@ -185,6 +194,7 @@ function prettifyJson() {
     pretty = JSON.stringify(obj, undefined, 4);
     $j('#jsonData').val(pretty).change();
   } catch (err) {
+    // eslint-disable-next-line no-alert
     alert(err);
   }
 }
@@ -194,6 +204,25 @@ function clearResponse() {
   $j('#response').empty();
   $j('#response_container').addClass('hidden');
 }
+
+// update script field based on selected Mid Server script
+function updateScript() {
+  var script = 'var request = new '
+    + gel('sys_display.mid_scripts').value
+    + '();';
+  $j('#check_login').prop('checked', false);
+  editor.setValue(script);
+}
+
+// Add login params
+$j('#check_login').click(function () {
+  var currentScript = editor.getValue();
+  if ($j(this).is(':checked')) {
+    editor.setValue(currentScript.replace('()', '(params)'));
+  } else {
+    editor.setValue(currentScript.replace('(params)', '()'));
+  }
+});
 ]]></client_script>
         <description/>
         <direct>false</direct>
@@ -268,8 +297,13 @@ function clearResponse() {
               <div id="mid_script_tab" class="tab-content">
                 <form>
                   <div class="form-group" id="mid_script">
-                    <span>*** Please use always 'params' as a parameter when calling MidServer Script Include to execute
-                      cloud operation-> e.g. AzureCloudAPIBase(params). In other cases is not required.</span>
+                    <g:ui_reference name="mid_scripts" id="mid_scripts" query="active=true" table="ecc_agent_script_include" onChange="updateScript()" />
+                    <div class="checkbox">
+                      <label>
+                        <input title="Please use this if MidServer Script Include requires cloud credentials params" value="" id="check_login" type="checkbox" />
+                        Use login params
+                      </label>
+                    </div>
                     <textarea id="code" class="form-control" required="true">
                       </textarea>
                   </div>
@@ -354,17 +388,6 @@ function clearResponse() {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/comment/comment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/search/searchcursor.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/keymap/sublime.min.js"></script>
-    <script>
-      CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        lineWrapping: true,
-        tabSize: 2,
-        smartIndent: true,
-        matchBrackets: true,
-        mode: 'javascript',
-        keyMap: 'sublime'
-    });
-    </script>
   </body>
 
   </html>
