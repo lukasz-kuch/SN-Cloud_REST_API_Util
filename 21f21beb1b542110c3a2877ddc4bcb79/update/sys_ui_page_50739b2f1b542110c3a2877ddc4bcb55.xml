@@ -25,6 +25,10 @@ var cloudScript = {
   AWS: 'AWSCloudUtil'
 };
 
+// make some input fields required
+document.getElementById('sys_display.mid_server').setAttribute('required', 'required');
+document.getElementById('sys_display.service_account').setAttribute('required', 'required');
+
 // on checkbox check action
 $j('#checkbox').click(function () {
   if ($j(this).is(':checked')) {
@@ -40,6 +44,13 @@ $j(document).ready(function () {
   $j('#tabs li').click(function () {
     $j('#tabs li').removeClass('active');
     $j(this).addClass('active');
+    if ($j(this).hasClass('tab_list_api')) {
+      $j('#method').attr('required', 'required');
+      $j('#endpoint').attr('required', 'required');
+    } else {
+      $j('#method').attr('required', false);
+      $j('#endpoint').attr('required', false);
+    }
     $j('.tab-content').hide();
     $j($j(this).find('a').attr('href')).fadeIn();
     //  At the end, we add return false so that the click on the link is not executed
@@ -105,11 +116,11 @@ function getAWSRegion(serviceAccountSysId) {
     var regions = JSON.parse(response);
     $j('#regions').removeClass('hidden');
     $j('.region-container').css('display', 'block');
-    $j('#regions').append($j('<option></option>').text('Select'));
+    $j('#regions').append($j('<option value="" selected="true" disabled="true"></option>').text('--Select Region--'));
     $j.each(regions, function (key, value) {
       $j('#regions').append($j('<option></option>').text(value));
     });
-    // $('#regions').prop('required',true);
+    $j('#regions').attr('required', 'required');
   }
 }
 
@@ -124,6 +135,7 @@ function onClickScripInclude() {
   var grAjax;
   var parsedResponse;
   var ajaxScript = cloudScript[gel('provider').value];
+  if (!validateFields()) return;
   $j('#spinner').removeClass('hidden');
   $j('#response').empty();
   $j('#response_container').addClass('hidden');
@@ -156,6 +168,7 @@ function onClickApi() {
   var parsedResponse;
   var payload = $j('#jsonData').val() || '';
   var ajaxScript = cloudScript[gel('provider').value];
+  if (!validateFields()) return;
   $j('#spinner').removeClass('hidden');
   $j('#response').empty();
   $j('#response_container').addClass('hidden');
@@ -223,6 +236,15 @@ $j('#check_login').click(function () {
     editor.setValue(currentScript.replace('(params)', '()'));
   }
 });
+
+// Validation of required fields
+function validateFields() {
+  var valid = true;
+  document.querySelectorAll("[required='required']").forEach(function (item) {
+    if (!item.value) valid = false;
+  });
+  return valid;
+}
 ]]></client_script>
         <description/>
         <direct>false</direct>
@@ -238,87 +260,89 @@ $j('#check_login').click(function () {
   </head>
 
   <body>
-    <h1>Cloud REST API Util </h1>
-    <div class="col-sm-3">
-      <div class="panel-group">
-        <div class="panel panel-info">
-          <div class="panel-heading">Cloud Credentials</div>
-          <div id="credentialPanel" class="panel-body">
-            <div class="form-group">
-              <label>Provider: </label>
-              <select name="provider" id="provider" class="form-control" onChange="addServiceAccounts()">
-                <option value="" selected="true" disabled="true">
-                  --Select Provider--
-                </option>
-                <option>AWS</option>
-                <option>AZURE</option>
-                <option disabled="true">GOOGLE</option>
-                <option disabled="true">VCENTER</option>
-              </select>
+    <form>
+      <h1>Cloud REST API Util </h1>
+      <div class="col-sm-3">
+        <div class="panel-group">
+          <div class="panel panel-info">
+            <div class="panel-heading">Cloud Credentials</div>
+            <div id="credentialPanel" class="panel-body">
+              <div class="form-group">
+                <label>Provider: </label>
+                <select name="provider" id="provider" class="form-control" onChange="addServiceAccounts()"
+                  required="required">
+                  <option value="" selected="true" disabled="true">
+                    --Select Provider--
+                  </option>
+                  <option>AWS</option>
+                  <option>AZURE</option>
+                  <option disabled="true">GOOGLE</option>
+                  <option disabled="true">VCENTER</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Service Account: </label>
+                <g:ui_reference name="service_account" id="service_account" table="cmdb_ci_cloud_service_account"
+                  completer="AJAXTableCompleter" query="nameLIKENone" onChange="setBaseUrl()" />
+                <div class="region-container">
+                  <label>Region:</label>
+                  <select class="form-control" id="regions" onChange="setAWSBaseUrl()"></select>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Service Account: </label>
-              <g:ui_reference name="service_account" id="service_account" table="cmdb_ci_cloud_service_account"
-                completer="AJAXTableCompleter" query="nameLIKENone" onChange="setBaseUrl()" />
-              <div class="region-container">
-                <label>Region:</label>
-                <select class="form-control" id="regions" onChange="setAWSBaseUrl()"></select>
+          </div>
+        </div>
+        <div class="panel-group">
+          <div class="panel panel-info">
+            <div class="panel-heading">Mid Server</div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label>MID Server: </label>
+                <g:ui_reference name="mid_server" id="mid_server" table="ecc_agent" query="status=Up" />
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="panel-group">
-        <div class="panel panel-info">
-          <div class="panel-heading">Mid Server</div>
-          <div class="panel-body">
-            <div class="form-group">
-              <label>MID Server: </label>
-              <g:ui_reference name="mid_server" id="mid_server" table="ecc_agent" query="status=Up" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-sm-9">
-      <div class="panel-group">
-        <div class="panel panel-primary">
-          <div class="panel-heading">API Request</div>
-          <div class="panel-body" id="tab-panel">
-            <ul id="tabs" class="nav nav-tabs">
-              <li class="tab_list_script active" data-toggle="tooltip" data-placement="top" title="AZURE, VCENTER, AWS">
-                <a data-toggle="tab" href="#mid_script_tab" rel="mid_script_tab">MID Server Scripts</a>
-              </li>
-              <li class="tab_list_api" data-toggle="tooltip" data-placement="top" title="AZURE, VCENTER, AWS">
-                <a id="api_tab" data-toggle="tab" href="#api_client_tab" rel="api_client_tab">API Client</a>
-              </li>
-            </ul>
-            <div class="tab-container">
-              <div id="mid_script_tab" class="tab-content">
-                <form>
+      <div class="col-sm-9">
+        <div class="panel-group">
+          <div class="panel panel-primary">
+            <div class="panel-heading">API Request</div>
+            <div class="panel-body" id="tab-panel">
+              <ul id="tabs" class="nav nav-tabs">
+                <li class="tab_list_script active" data-toggle="tooltip" data-placement="top"
+                  title="AZURE, VCENTER, AWS">
+                  <a data-toggle="tab" href="#mid_script_tab" rel="mid_script_tab">MID Server Scripts</a>
+                </li>
+                <li class="tab_list_api" data-toggle="tooltip" data-placement="top" title="AZURE, VCENTER, AWS">
+                  <a id="api_tab" data-toggle="tab" href="#api_client_tab" rel="api_client_tab">API Client</a>
+                </li>
+              </ul>
+              <div class="tab-container">
+                <div id="mid_script_tab" class="tab-content">
                   <div class="form-group" id="mid_script">
-                    <g:ui_reference name="mid_scripts" id="mid_scripts" query="active=true" table="ecc_agent_script_include" onChange="updateScript()" />
+                    <g:ui_reference name="mid_scripts" id="mid_scripts" query="active=true"
+                      table="ecc_agent_script_include" onChange="updateScript()" />
                     <div class="checkbox">
                       <label>
-                        <input title="Please use this if MidServer Script Include requires cloud credentials params" value="" id="check_login" type="checkbox" />
+                        <input title="Please use this if MidServer Script Include requires cloud credentials params"
+                          value="" id="check_login" type="checkbox" />
                         Use login params
                       </label>
                     </div>
-                    <textarea id="code" class="form-control" required="true">
+                    <textarea id="code" class="form-control">
                       </textarea>
                   </div>
                   <div>
-                    <button id="execute" type="button" class="btn btn-primary" onclick="onClickScripInclude()">
+                    <button id="execute" type="submit" class="btn btn-primary" onclick="onClickScripInclude()">
                       Execute
                     </button>
                   </div>
-                </form>
-              </div>
-              <div id="api_client_tab" class="tab-content">
-                <form>
+                </div>
+                <div id="api_client_tab" class="tab-content">
                   <div class="row">
                     <div class="form-group col-sm-2">
-                      <select id="method" class="form-control" required="true">
+                      <select id="method" class="form-control" >
                         <option value="" selected="true" disabled="true" hidden="true">
                           METHOD
                         </option>
@@ -335,11 +359,10 @@ $j('#check_login').click(function () {
                           <span id="baseUrl">Base URL</span>
                         </div>
                         <div>
-                          <input type="text" id="endpoint" class="form-control" placeholder="Endpoint URL"
-                            required="true" />
+                          <input type="text" id="endpoint" class="form-control" placeholder="Endpoint URL" />
                         </div>
                         <div class="input-group-btn">
-                          <button id="send" class="btn btn-success" type="button" onclick="onClickApi()">
+                          <button id="send" class="btn btn-success" type="submit" onclick="onClickApi()">
                             Send
                           </button>
                         </div>
@@ -350,44 +373,44 @@ $j('#check_login').click(function () {
                     <label><input id="checkbox" type="checkbox" value="" />Request
                       Body (JSON)</label>
                   </div>
-                </form>
-                <div id="request_body" class="form-group hidden">
-                  <textarea class="form-control" id="jsonData"></textarea>
-                  <div>
-                    <button id="prettify" type="button" class="btn btn-danger" onclick="prettifyJson()">
-                      Prettify
-                    </button>
+                  <div id="request_body" class="form-group hidden">
+                    <textarea class="form-control" id="jsonData"></textarea>
+                    <div>
+                      <button id="prettify" type="submit" class="btn btn-danger" onclick="prettifyJson()">
+                        Prettify
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="panel-group">
-        <div class="panel panel-success">
-          <div class="panel-heading">Response</div>
-          <div class="panel-body">
-            <div id="spinner" class="loader hidden"></div>
-            <div id="response_container" class="hidden">
-              <pre id="response"></pre>
-            </div>
-            <div>
-              <button id="clear" type="submit" class="btn btn-danger" onclick="clearResponse()">
-                Clear
-              </button>
+        <div class="panel-group">
+          <div class="panel panel-success">
+            <div class="panel-heading">Response</div>
+            <div class="panel-body">
+              <div id="spinner" class="loader hidden"></div>
+              <div id="response_container" class="hidden">
+                <pre id="response"></pre>
+              </div>
+              <div>
+                <button id="clear" type="button" class="btn btn-danger" onclick="clearResponse()">
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/edit/matchbrackets.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/hint/javascript-hint.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/comment/comment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/search/searchcursor.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/keymap/sublime.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/edit/matchbrackets.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/javascript/javascript.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/hint/javascript-hint.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/comment/comment.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/search/searchcursor.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/keymap/sublime.min.js"></script>
+    </form>
   </body>
 
   </html>
