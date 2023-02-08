@@ -15,14 +15,14 @@ AzureCloudAPI.prototype = {
     this.tenantId = probe.getParameter('tenantId');
     this.secretKey = probe.getParameter('secretKey');
     this.endpoint = probe.getParameter('endpoint');
-    this.subscriptionId = probe.getParameter('subscriptionId');
-    this.baseUrl = 'https://management.azure.com/subscriptions/' + this.subscriptionId;
+    // this.subscriptionId = probe.getParameter('subscriptionId');
+    // this.baseUrl = 'https://management.azure.com/subscriptions/' + this.subscriptionId;
   },
 
   GET: function () {
     var response;
     var responseBody;
-    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    var request = new this.HTTPRequest(this.endpoint);
     request.addHeader('Authorization', this.getToken());
     request.addHeader('Content-Type', 'application/json');
     response = request.get();

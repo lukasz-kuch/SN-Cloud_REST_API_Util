@@ -9,6 +9,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-use-before-define */
 /* eslint-disable no-var */
+var awsBaseURL;
 var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
   lineNumbers: true,
   lineWrapping: true,
@@ -80,8 +81,8 @@ function setBaseUrl() {
     case 'AZURE':
       $j('#regions').empty();
       $j('#api_client_tab').removeClass('hidden');
-      $j('#baseUrl')
-        .text(
+      $j('#endpoint')
+        .val(
           'https://management.azure.com/subscriptions/'
             + saGr.account_id.toString()
         )
@@ -90,8 +91,8 @@ function setBaseUrl() {
     case 'VCENTER':
       $j('#regions').empty();
       $j('#api_client_tab').removeClass('hidden');
-      $j('#baseUrl')
-        .text(saGr.datacenter_url.toString().replace('/sdk', '').trim())
+      $j('#endpoint')
+        .val(saGr.datacenter_url.toString().replace('/sdk', '').trim())
         .change();
       break;
     case 'AWS':
@@ -125,9 +126,10 @@ function getAWSRegion(serviceAccountSysId) {
 }
 
 function setAWSBaseUrl() {
-  $j('#baseUrl')
-    .text('https://ec2.' + gel('regions').value + '.amazonaws.com')
+  $j('#endpoint')
+    .val('https://ec2.' + gel('regions').value + '.amazonaws.com')
     .change();
+  awsBaseURL = 'https://ec2.' + gel('regions').value + '.amazonaws.com';
 }
 
 // execute http request for midserver script include execution
@@ -178,9 +180,10 @@ function onClickApi() {
   grAjax.addParam('sysparm_serviceAccount', gel('service_account').value);
   grAjax.addParam('sysparm_mid', gel('sys_display.mid_server').value);
   grAjax.addParam('sysparm_endpoint', gel('endpoint').value);
-  grAjax.addParam('sysparm_baseUrl', $j('#baseUrl').text());
+  // grAjax.addParam('sysparm_baseUrl', $j('#baseUrl').text());
   if (gel('provider').value === 'AWS') {
     grAjax.addParam('sysparm_region', gel('regions').value);
+    grAjax.addParam('sysparm_baseUrl', awsBaseURL);
   }
   grAjax.addParam('sysparm_payload', payload);
   grAjax.getXMLAnswer(getResponse);
@@ -260,7 +263,7 @@ function validateFields() {
   </head>
 
   <body>
-    <form>
+    <form onsubmit="return false">
       <h1>Cloud REST API Util </h1>
       <div class="col-sm-3">
         <div class="panel-group">
@@ -340,32 +343,27 @@ function validateFields() {
                   </div>
                 </div>
                 <div id="api_client_tab" class="tab-content">
-                  <div class="row">
-                    <div class="form-group col-sm-2">
-                      <select id="method" class="form-control" >
-                        <option value="" selected="true" disabled="true" hidden="true">
-                          METHOD
-                        </option>
-                        <option>GET</option>
-                        <option>POST</option>
-                        <option>PUT</option>
-                        <option>PATCH</option>
-                        <option>DELETE</option>
-                      </select>
-                    </div>
-                    <div class="form-group col-sm-10">
-                      <div class="input-group">
-                        <div class="input-group-addon">
-                          <span id="baseUrl">Base URL</span>
-                        </div>
-                        <div>
-                          <input type="text" id="endpoint" class="form-control" placeholder="Endpoint URL" />
-                        </div>
-                        <div class="input-group-btn">
-                          <button id="send" class="btn btn-success" type="submit" onclick="onClickApi()">
-                            Send
-                          </button>
-                        </div>
+                  <div class="wrapper-fluid">
+                    <div class="row">
+                      <div class="col-lg-1 col-start">
+                        <select id="method" class="form-control">
+                          <option value="" selected="true" disabled="true" hidden="true">
+                            METHOD
+                          </option>
+                          <option>GET</option>
+                          <option>POST</option>
+                          <option>PUT</option>
+                          <option>PATCH</option>
+                          <option>DELETE</option>
+                        </select>
+                      </div>
+                      <div class="col-lg-10">
+                        <input type="text" id="endpoint" class="form-control"  placeholder="Endpoint URL" style="width: 100%"/>
+                      </div>
+                      <div class="col-lg-1 col-end">
+                        <button id="send" class="btn btn-success" type="submit" style="width: 100%" onclick="onClickApi()">
+                          Send
+                        </button>
                       </div>
                     </div>
                   </div>

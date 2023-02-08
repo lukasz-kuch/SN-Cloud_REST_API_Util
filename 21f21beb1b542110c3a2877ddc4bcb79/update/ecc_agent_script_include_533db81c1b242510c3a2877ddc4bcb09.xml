@@ -14,13 +14,13 @@ AWSCloudAPI.prototype = {
     this.endpoint = probe.getParameter('endpoint');
     this.authorization = probe.getParameter('authorization');
     this.paylod = probe.getParameter('payload');
-    this.baseUrl = probe.getParameter('baseUrl');
+    // this.baseUrl = probe.getParameter('baseUrl');
   },
 
   GET: function () {
     var response;
     var responseBody;
-    var request = new this.HTTPRequest(this.baseUrl + this.endpoint);
+    var request = new this.HTTPRequest(this.endpoint);
     request.addHeader('Authorization', this.authorization);
     // request.addHeader("Accept", "application/xml");
     request.addHeader('X-Amz-Date', this.date);
